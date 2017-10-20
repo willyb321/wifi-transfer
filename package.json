@@ -1,33 +1,33 @@
 {
-  "name": "wifi-transfer",
-  "version": "0.1.0",
-  "description": "Transfer files via wifi",
-  "license": "MIT",
-  "repository": "willyb321/wifi-transfer",
-  "author": {
-	"name": "willyb321",
-	"email": "wbwilliam7@gmail.com",
-	"url": "williamblythe.info"
-  },
-  "bin": "index.js",
-  "engines": {
-	"node": ">=6"
-  },
-  "files": [
-	"index.js"
-  ],
-  "keywords": [
-	"cli-app",
-	"cli",
-	"file",
-	"transfer"
-  ],
-  "dependencies": {
-	"bonjour": "^3.5.0",
-	"mime": "^2.0.3",
-	"nanoid": "^0.2.2",
-	"request": "^2.83.0",
-	"request-progress": "^3.0.0",
-	"yargs": "^9.0.1"
-  }
+ "name": "wifi-transfer",
+ "version": "0.1.0",
+ "description": "Transfer files via wifi",
+ "license": "MIT",
+ "repository": "willyb321/wifi-transfer",
+ "author": {
+  "name": "willyb321",
+  "email": "wbwilliam7@gmail.com",
+  "url": "williamblythe.info"
+ },
+ "bin": "index.js",
+ "engines": {
+  "node": ">=6"
+ },
+ "files": [
+  "index.js"
+ ],
+ "keywords": [
+  "cli-app",
+  "cli",
+  "file",
+  "transfer"
+ ],
+ "dependencies": {
+  "bonjour": "^3.5.0",
+  "mime": "^2.0.3",
+  "nanoid": "^0.2.2",
+  "request": "^2.83.0",
+  "request-progress": "^3.0.0",
+  "yargs": "^9.0.1"
+ }
 }
