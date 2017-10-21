@@ -7,6 +7,8 @@ const nanoid = require('nanoid');
 
 // noinspection BadExpressionStatementJS
 require('yargs') // eslint-disable-line
+	.showHelpOnFail(true, 'whoops, something went wrong! run with --help')
+	.demandCommand(1)
 	.command('send', 'send a file', (yargs) => {
 		yargs.option('port', {
 			describe: 'port to bind on. default is random between 1024 and 65534',
@@ -18,9 +20,6 @@ require('yargs') // eslint-disable-line
 			alias: 'f'
 		});
 	}, (argv) => {
-		if (argv.verbose) {
-			console.info(`start server on :${argv.port}`);
-		}
 		if (argv.file) {
 			send(parseInt(argv.port), path.resolve(argv.file));
 		} else {
@@ -62,7 +61,7 @@ require('yargs') // eslint-disable-line
 function accept(id, out) {
 	const request = require('request');
 	const progress = require('request-progress');
-	bonjour.find({type: 'http'}, function (service) {
+	bonjour.findOne({type: 'http', name: `Local File Transfer: ${id}`}, function (service) {
 		if (service.name === `Local File Transfer: ${id}`) {
 			console.log(`Found the right server. Downloading file.`);
 			progress(request(`http://${service.addresses[0]}:${service.port}`))
