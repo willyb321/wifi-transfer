@@ -21,6 +21,7 @@
  ],
  "dependencies": {
   "bonjour": "^3.5.0",
+  "gauge": "^2.7.4",
   "mime": "^2.0.3",
   "nanoid": "^0.2.2",
   "request": "^2.83.0",

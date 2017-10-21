@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const nanoid = require('nanoid');
+const Gauge = require('gauge');
 
 // noinspection BadExpressionStatementJS
 require('yargs') // eslint-disable-line
@@ -65,10 +66,12 @@ function accept(id, out) {
 	bonjour = require('bonjour')();
 	const request = require('request');
 	const progress = require('request-progress');
-	bonjour.findOne({type: 'http', name: `Local File Transfer: ${id}`}, function (service) {
+	bonjour.find({type: 'http'}, function (service) {
 		if (service.name === `Local File Transfer: ${id}`) {
 			console.log(`Found the right server. Downloading file.`);
-			progress(request(`http://${service.addresses[0]}:${service.port}`))
+			const gauge = new Gauge();
+			const req = request(`http://${service.addresses[0]}:${service.port}`);
+			progress(req)
 				.on('progress', function (state) {
 					// The state is an object that looks like this:
 					// {
@@ -82,14 +85,15 @@ function accept(id, out) {
 					//         elapsed: 36.235,        // The total elapsed seconds since the start (3 decimals)
 					//         remaining: 81.403       // The remaining seconds to finish (3 decimals)
 					//     }
-					// }
-					console.log(`Downloading: ${state.percent}%, ${state.time.remaining || 'unknown'} seconds remaining`);
+					gauge.show(`${state.percent * 100}% downloaded, ${state.time.remaining || 'unknown'} seconds left`, state.percent)
 				})
 				.on('error', function (err) {
 					console.log(err);
 					process.exit(1);
 				})
 				.on('end', function () {
+					gauge.disable();
+					console.log('\n');
 					console.log('File received. Exiting');
 					bonjour.destroy();
 					process.exit(0);
