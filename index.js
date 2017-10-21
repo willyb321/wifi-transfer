@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const bonjour = require('bonjour')();
+let bonjour;
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
@@ -7,6 +7,9 @@ const nanoid = require('nanoid');
 
 // noinspection BadExpressionStatementJS
 require('yargs') // eslint-disable-line
+	.usage(`Usage: $0 <command> [options]`)
+	.version(require('./package').version)
+	.alias('version', 'V')
 	.showHelpOnFail(true, 'whoops, something went wrong! run with --help')
 	.demandCommand(1)
 	.command('send', 'send a file', (yargs) => {
@@ -59,6 +62,7 @@ require('yargs') // eslint-disable-line
 	.argv;
 
 function accept(id, out) {
+	bonjour = require('bonjour')();
 	const request = require('request');
 	const progress = require('request-progress');
 	bonjour.findOne({type: 'http', name: `Local File Transfer: ${id}`}, function (service) {
@@ -96,6 +100,7 @@ function accept(id, out) {
 }
 
 function send(port, file) {
+	bonjour = require('bonjour')();
 	const mime = require('mime');
 	let service;
 	if (!file) {
