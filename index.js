@@ -157,6 +157,10 @@ function send(port, file) {
 	if (!file) {
 		return null;
 	}
+	if (!fs.existsSync(path.resolve(file))) {
+		console.log(`${file} doesn't exist. Exiting.`);
+		process.exit(0);
+	}
 	const mime = require('mime');
 	const id = nanoid(5);
 	const service = bonjour.publish({
