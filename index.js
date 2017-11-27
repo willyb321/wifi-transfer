@@ -29,7 +29,8 @@ require('yargs') // eslint-disable-line no-unused-expressions
 		});
 		yargs.option('file', {
 			describe: 'File to send',
-			alias: 'f'
+			alias: 'f',
+			required: true
 		});
 	}, argv => {
 		if (argv.file) {
