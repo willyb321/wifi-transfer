@@ -18,16 +18,17 @@ require('yargs') // eslint-disable-line no-unused-expressions
 	.usage(`Usage: $0 <command> [options]`)
 	.version(require('./package').version)
 	.alias('version', 'V')
+	.help('help')
+	.alias('help', 'h')
 	.showHelpOnFail(true, 'whoops, something went wrong! run with --help')
 	.demandCommand(1)
 	.command('send', 'send a file', yargs => {
 		yargs.option('port', {
 			describe: 'port to bind on. default is random between 1024 and 65534',
-			default: (Math.random() * (65534 - 1024 + 1)) + 1024
+			default: Math.floor((Math.random() * (65534 - 1024 + 1)) + 1024)
 		});
 		yargs.option('file', {
 			describe: 'File to send',
-			default: null,
 			alias: 'f'
 		});
 	}, argv => {
