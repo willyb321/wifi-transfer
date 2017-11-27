@@ -7,7 +7,7 @@ const readline = require('readline');
 const bonjour = require('bonjour')();
 const nanoid = require('nanoid');
 const Gauge = require('gauge');
-
+const ON_DEATH = require('death');
 const rl = readline.createInterface({
 	input: process.stdin,
 	output: process.stdout
@@ -49,7 +49,20 @@ require('yargs') // eslint-disable-line no-unused-expressions
 			default: null,
 			alias: 'o'
 		});
+		yargs.option('ip', {
+			describe: 'IP (if bonjour does not work)',
+			default: null,
+			alias: 'a'
+		});
+		yargs.option('port', {
+			describe: 'Port (if bonjour does not work)',
+			default: null,
+			alias: 'p'
+		});
 	}, argv => {
+		if (argv.ip && argv.i && argv.out) {
+			accept(argv.i, argv.out, argv.ip, argv.port)
+		}
 		if (argv.i && argv.out) {
 			accept(argv.i, argv.out);
 		} else if (!argv.out && !argv.i) {
@@ -69,9 +82,14 @@ require('yargs') // eslint-disable-line no-unused-expressions
 	})
 	.argv;
 
-async function accept(id, out) {
-	const request = require('request');
-	const progress = require('request-progress');
+/**
+ * @description Accept a file
+ * @param {any} id NanoID of the sender
+ * @param {any} out Out file
+ * @param {any} ip IP address of the sender
+ * @param {any} port Port # of the sender
+ */
+async function accept(id, out, ip, port) {
 	if (fs.existsSync(path.resolve(out))) {
 		const promptInput = await readLineAsync('Output file already exists. Are you sure you want to do this? y/n\n');
 		// console.log(promptInput);
@@ -82,6 +100,10 @@ async function accept(id, out) {
 			rl.close();
 		}
 	}
+	if (ip && port) {
+		download(ip, port, out);
+		return;
+	}
 	bonjour.find({
 		type: 'http'
 	}, service => {
@@ -91,29 +113,46 @@ async function accept(id, out) {
 		if (service.name === `Local File Transfer: ${id}`) {
 			console.log(`Found the right server. Downloading file.`);
 			if (service.addresses && service.addresses.length > 0 && service.port) {
-				const gauge = new Gauge();
-				const req = request(`http://${service.addresses[0]}:${service.port}`);
-				progress(req)
-					.on('progress', state => {
-						gauge.show(`${state.percent * 100}% downloaded, ${state.time.remaining || 'unknown'} seconds left`, state.percent);
-					})
-					.on('error', err => {
-						console.log(err);
-						process.exit(1);
-					})
-					.on('end', () => {
-						gauge.disable();
-						console.log('\n');
-						console.log('File received. Exiting');
-						bonjour.destroy();
-						process.exit(0);
-					})
-					.pipe(fs.createWriteStream(path.resolve(out)));
+				download(service.addresses[0], service.port, out);
 			}
 		}
 	});
 }
 
+/**
+ * Downlaod a file.
+ * @param {String} ip - IP Address of the server
+ * @param {Number} port - Port of the server
+ * @param {String} out - Out file.
+ */
+function download(ip, port, out) {
+	const request = require('request');
+	const progress = require('request-progress');
+	const gauge = new Gauge();
+	const req = request(`http://${ip}:${port}`);
+	progress(req)
+		.on('progress', state => {
+			gauge.show(`${state.percent * 100}% downloaded, ${state.time.remaining || 'unknown'} seconds left`, state.percent);
+		})
+		.on('error', err => {
+			console.log(err);
+			process.exit(1);
+		})
+		.on('end', () => {
+			gauge.disable();
+			console.log('\n');
+			console.log('File received. Exiting');
+			bonjour.destroy();
+			process.exit(0);
+		})
+		.pipe(fs.createWriteStream(path.resolve(out)));
+}
+
+/**
+ * Send a file
+ * @param {Number} port - Port number
+ * @param {String} file - Path to file
+ */
 function send(port, file) {
 	if (!file) {
 		return null;
@@ -145,11 +184,32 @@ function send(port, file) {
 		});
 	});
 	server.listen(port);
+	ON_DEATH(function (signal, err) {
+		if (service && service.destroy) {
+			service.destroy();
+		}
+		if (server && server.listening) {
+			server.close();
+		}
+		if (bonjour && bonjour.destroy) {
+			bonjour.destroy();
+		}
+		process.exit(0);
+	});
+
 	console.log('Bonjour published. try to transfer');
+	console.log(`If bonjour does not work, the server is listening on ${require('os').networkInterfaces().eth0.find(elm=>elm.family=='IPv4').address}:${port}`)
 	console.log(`ID is: ${id}`);
 	console.log(`Example command: wifi-transfer accept -i ${id} --out ${filename}`);
+	console.log(`Example command without bonjour: wifi-transfer accept -i ${id} -a ${require('os').networkInterfaces().eth0.find(elm=>elm.family=='IPv4').address} -p ${port} --out ${filename}`);
 }
 
+
+/**
+ * @description Helper function to prompt.
+ * @param {String} message The message to ask.
+ * @returns {Promise<String>}
+ */
 function readLineAsync(message) {
 	return new Promise(resolve => {
 		rl.question(message, answer => {
