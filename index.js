@@ -7,7 +7,9 @@ const readline = require('readline');
 const bonjour = require('bonjour')();
 const nanoid = require('nanoid');
 const Gauge = require('gauge');
-const ON_DEATH = require('death');
+const onDeath = require('death');
+const ip = require('ip');
+
 const rl = readline.createInterface({
 	input: process.stdin,
 	output: process.stdout
@@ -17,11 +19,9 @@ const rl = readline.createInterface({
 require('yargs') // eslint-disable-line no-unused-expressions
 	.usage(`Usage: $0 <command> [options]`)
 	.version(require('./package').version)
-	.alias('version', 'V')
+	.alias('version', 'v')
 	.help('help')
 	.alias('help', 'h')
-	.showHelpOnFail(true, 'whoops, something went wrong! run with --help')
-	.demandCommand(1)
 	.command('send', 'send a file', yargs => {
 		yargs.option('port', {
 			describe: 'port to bind on. default is random between 1024 and 65534',
@@ -43,27 +43,25 @@ require('yargs') // eslint-disable-line no-unused-expressions
 	.command('accept', 'accept a file', yargs => {
 		yargs.option('id', {
 			describe: 'id from the sender',
-			default: null,
-			alias: 'i'
+			alias: 'i',
+			required: true
 		});
 		yargs.option('out', {
 			describe: 'out file',
-			default: null,
-			alias: 'o'
+			alias: 'o',
+			required: true
 		});
 		yargs.option('ip', {
 			describe: 'IP (if bonjour does not work)',
-			default: null,
 			alias: 'a'
 		});
 		yargs.option('port', {
 			describe: 'Port (if bonjour does not work)',
-			default: null,
 			alias: 'p'
 		});
 	}, argv => {
 		if (argv.ip && argv.i && argv.out) {
-			accept(argv.i, argv.out, argv.ip, argv.port)
+			accept(argv.i, argv.out, argv.ip, argv.port);
 		}
 		if (argv.i && argv.out) {
 			accept(argv.i, argv.out);
@@ -78,10 +76,9 @@ require('yargs') // eslint-disable-line no-unused-expressions
 			process.exit(1);
 		}
 	})
-	.option('verbose', {
-		alias: 'v',
-		default: false
-	})
+	.showHelpOnFail(true, 'whoops, something went wrong! run with --help')
+	.demandCommand(1)
+	.strict()
 	.argv;
 
 /**
@@ -94,12 +91,12 @@ require('yargs') // eslint-disable-line no-unused-expressions
 async function accept(id, out, ip, port) {
 	if (fs.existsSync(path.resolve(out))) {
 		const promptInput = await readLineAsync('Output file already exists. Are you sure you want to do this? y/n\n');
-		// console.log(promptInput);
-		if (promptInput !== 'y') {
-			console.log('Not overwriting. Exiting.')
-			process.exit(0);
-		} else {
+		// Console.log(promptInput);
+		if (promptInput === 'y') {
 			rl.close();
+		} else {
+			console.log('Not overwriting. Exiting.');
+			process.exit(0);
 		}
 	}
 	if (ip && port) {
@@ -190,7 +187,7 @@ function send(port, file) {
 		});
 	});
 	server.listen(port);
-	ON_DEATH(function (signal, err) {
+	onDeath((signal, err) => {
 		if (service && service.destroy) {
 			service.destroy();
 		}
@@ -200,16 +197,18 @@ function send(port, file) {
 		if (bonjour && bonjour.destroy) {
 			bonjour.destroy();
 		}
+		if (err) {
+			console.error(err);
+		}
 		process.exit(0);
 	});
 
 	console.log('Bonjour published. try to transfer');
-	console.log(`If bonjour does not work, the server is listening on ${require('os').networkInterfaces().eth0.find(elm=>elm.family=='IPv4').address}:${port}`)
+	console.log(`If bonjour does not work, the server is listening on ${ip.address()}:${port}`);
 	console.log(`ID is: ${id}`);
 	console.log(`Example command: wifi-transfer accept -i ${id} --out ${filename}`);
-	console.log(`Example command without bonjour: wifi-transfer accept -i ${id} -a ${require('os').networkInterfaces().eth0.find(elm=>elm.family=='IPv4').address} -p ${port} --out ${filename}`);
+	console.log(`Example command without bonjour: wifi-transfer accept -i ${id} -a ${ip.address()} -p ${port} --out ${filename}`);
 }
-
 
 /**
  * @description Helper function to prompt.
