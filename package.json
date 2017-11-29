@@ -1,6 +1,6 @@
 {
   "name": "wifi-transfer",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Transfer files via wifi",
   "license": "MIT",
   "repository": "willyb321/wifi-transfer",
