@@ -26,6 +26,7 @@
     "ip": "^1.1.5",
     "mime": "^2.0.3",
     "nanoid": "^0.2.2",
+    "promptly": "^2.2.0",
     "request": "^2.83.0",
     "request-progress": "^3.0.0",
     "yargs": "^9.0.1"

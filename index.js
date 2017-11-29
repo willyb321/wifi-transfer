@@ -89,16 +89,21 @@ require('yargs') // eslint-disable-line no-unused-expressions
  * @param {any} port Port # of the sender
  */
 async function accept(id, out, ip, port) {
+	const promptly = require('promptly');
 	if (fs.existsSync(path.resolve(out))) {
-		const promptInput = await readLineAsync('Output file already exists. Are you sure you want to do this? y/n\n');
-		// Console.log(promptInput);
-		if (promptInput === 'y') {
-			rl.close();
-		} else {
-			console.log('Not overwriting. Exiting.');
-			process.exit(0);
-		}
+		promptly.confirm('Are you sure? ', function (err, value) {
+			if (value === true) {
+				console.log('Overwriting.');
+				confirmed(id, ip, port, out);
+			} else {
+				console.log('Not overwriting. Exiting.');
+				process.exit(0);
+			}
+		});
 	}
+}
+
+function confirmed(id, ip, port, out) {
 	if (ip && port) {
 		download(ip, port, out);
 		return;
